@@ -1,0 +1,2 @@
+class Psycologists:
+    pass
