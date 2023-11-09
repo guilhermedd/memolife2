@@ -4,22 +4,24 @@ from Users import Users
 from Posts import Posts
 from Consultations import Consultations
 
-# Connect to the PostgreSQL database
+with open('password.txt', 'r') as file:
+    PASSWORD = file.read().splitlines()[0]
+
+# # Connect to the PostgreSQL database
 conn = psycopg2.connect(
     host="localhost",
     database="memolife",
     user="postgres",
-    password="8837"
+    password=PASSWORD
 )
 
 # Create the Users table
 with conn.cursor() as cur:
     cur.execute("""
-        SELECT * FROM Users;
+        SELECT * FROM Users WHERE last like 'dos Santos%';
     """)
+    print(cur.fetchall())
     # fetchall() retorna uma lista de tuplas
-    print(cur.fetchall()[0])
-
 
 
 # Commit the changes and close the connection
