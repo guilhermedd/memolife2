@@ -1,8 +1,8 @@
 import psycopg2
 
 class Users:
-    def __init__(self, email, password, first, last, username, conn):
-        self.id = None
+    def __init__(self, email, password, first, last, username, conn, id = None):
+        self.id             = id
         self.email:str      = email
         self.password:str   = password
         self.first:str      = first

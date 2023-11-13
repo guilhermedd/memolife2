@@ -45,9 +45,8 @@ def initialize(class_name, connection):
             if class_name == 'Psychologists':
                 classes.append(Psychologists(row[1], row[2], row[3], row[4], row[5], row[6], row[7], CONN))
             elif class_name == 'Users':
-                user = Users(row[1], row[2], row[3], row[4], row[5], CONN)
-                classes.append(user)
-                list.update({user.id: user})  
+                user = Users(row[1], row[2], row[3], row[4], row[5], CONN, id = row[0])
+                list.update({row[0]: user})  
             elif class_name == 'Posts':
                 classes.append(Posts(row[1], row[2], row[3], row[4], row[5], row[6], CONN))
             elif class_name == 'Consultations':
