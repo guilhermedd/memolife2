@@ -19,56 +19,71 @@ try:
         user="postgres",
         password=PASSWORD
     )
-    
 except (Exception, psycopg2.DatabaseError) as error:
     print("Ocorreu um erro", error)
 
-
-if os.name == 'nt':  # Windows
-    CLEAR = 'cls'
-else:  # Mac and Linux
-    CLEAR = 'clear'
-
 def clear():
+    if os.name == 'nt':  # Windows
+        CLEAR = 'cls'
+    else:  # Mac and Linux
+        CLEAR = 'clear'
     os.system(CLEAR)
 
 def initialize(class_name, connection):
-    list = {}
+    data = {}
+    instances = {}
     with connection.cursor() as cur:
         cur.execute(
             f"SELECT * FROM {class_name};"
         )
         tables = cur.fetchall()
-        print(tables)
-        classes = []
         for row in tables:
             if class_name == 'Psychologists':
-                classes.append(Psychologists(row[1], row[2], row[3], row[4], row[5], row[6], row[7], CONN))
+                pass
+                # classes.append(Psychologists(row[1], row[2], row[3], row[4], row[5], row[6], row[7], CONN))
             elif class_name == 'Users':
                 user = Users(row[1], row[2], row[3], row[4], row[5], CONN, id = row[0])
-                list.update({row[0]: user})  
+                instances[row[0]] = user 
             elif class_name == 'Posts':
-                classes.append(Posts(row[1], row[2], row[3], row[4], row[5], row[6], CONN))
+                pass
+                # classes.append(Posts(row[1], row[2], row[3], row[4], row[5], row[6], CONN))
             elif class_name == 'Consultations':
-                classes.append(Consultations(row[1], row[2], row[3], row[4], row[5], row[6], row[7], CONN))
-    return list 
+                pass
+                # classes.append(Consultations(row[1], row[2], row[3], row[4], row[5], row[6], row[7], CONN))
+    data[class_name] = instances
+    return data 
 
-users_list = initialize('Users', CONN)
+
+# List = {"class_name" : {"id": atributes}}
+    
+table_list = initialize('Users', CONN)
+
+def create_example(class_name, CONN, number_of_instances):
+    for i in range(number_of_instances):
+        if class_name == 'Psychologists':
+            Psychologists()
+        elif class_name == 'Users':
+            user = Users(f"email_{i}@gmail.com", f"password_{i}", f"first_name_{i}", f"last_name_{i}", f"username_{i}", CONN)
+            user.create()
+        elif class_name == 'Posts':
+            Posts()
+        elif class_name == 'Consultations':
+            Consultations()
 
 def get_all(class_name, CONN):  # Return None if not found
+    table_list = initialize(class_name, CONN)
     try:
         with CONN.cursor() as cur:
             cur.execute(
                 f"SELECT * FROM {class_name};"
             )
+
             tables = cur.fetchall()	
-            print("tables:", tables)
             ids = [row[0] for row in tables]
             instances = []
-            print("ids:", ids, "| Users List: ", users_list)
+
             for id in ids:
-                instances.append(users_list[id])
-            print("instances:", instances)
+                instances.append(table_list[class_name][id])
 
             return instances if instances else None
     except (Exception, psycopg2.DatabaseError) as error:
@@ -84,6 +99,7 @@ def delete_all(class_name, CONN):  # return -1 if not found
             cur.execute(
                 f"DELETE FROM {class_name};"
             )
+            CONN.commit()
             print(f"Deleted all {class_name}")
             return 0
     except (Exception, psycopg2.DatabaseError) as error:
@@ -91,21 +107,15 @@ def delete_all(class_name, CONN):  # return -1 if not found
         return -1
 
 def insert_one(class_name, CONN):
+    table_list = initialize(class_name, CONN)
     if class_name == 'Psychologists':
         Psychologists()
     elif class_name == 'Users':
-        print("Please insert the following data:")
-        email = input("Email(Maximum of 50 characters): \n")
-        password = input("Password(Maximum of 50 characters): \n ")
-        first = input("First name(Maximum of 20 characters): \n ")
-        last = input("Last name(Maximum of 50 characters): \n ")
-        username = input("Username(Maximum of 20 characters): \n ")
-        USER = Users(email, password, first, last, username, CONN)
-        USER.create()
+        user = Users('', '', '', '', '', CONN)
+        user.create_self(table_list[class_name])
         clear()
-        print(USER.show())
-        if USER:
-            users_list.update({USER.id: USER})
+        if user.create() is not None:
+            table_list.update({user.id: user})
             return 0
         else:
             return -1
@@ -135,6 +145,7 @@ def menu():
             return
         answer = None
         
+        # Show all classes
         while not answer:
             for i, class_name in enumerate(CLASSES):
                 print(f"{i+1} - {class_name}")
@@ -142,17 +153,18 @@ def menu():
             answer = answer if answer > 0 and answer < 5 else None
             clear()
 
+        # Call the function chosen
         func = FUNCTIONS[answer_menu-1](CLASSES[answer-1], CONN)
 
-        if not func:
+        if func == None:
             print("There is no data to show")
         elif func == -1:
             print("There was an error")
         elif func == 0:
-            pass
+            print("\nEverything went well!")
         else:
             for instalce in func:
-                instalce.show()
+                print(instalce.show())
 
         input("\nPress any key to continue...")
 
