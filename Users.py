@@ -3,11 +3,11 @@ import psycopg2
 class Users:
     def __init__(self, email, password, first, last, username, conn, id = None):
         self.id             = id
-        self.email:str      = email
-        self.password:str   = password
-        self.first:str      = first
-        self.last:str       = last
-        self.username:str   = username
+        self.email          = email
+        self.password       = password
+        self.first          = first
+        self.last           = last
+        self.username       = username
         self.CONN           = conn
     
     def create(self):
