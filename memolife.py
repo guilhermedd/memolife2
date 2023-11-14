@@ -39,10 +39,10 @@ def initialize(class_name, connection):
         tables = cur.fetchall()
         for row in tables:
             if class_name == 'Psychologists':
-                pass
-                # classes.append(Psychologists(row[1], row[2], row[3], row[4], row[5], row[6], row[7], CONN))
+                psycho = Psychologists(id=row[0], name=row[1], email=row[2], password=row[3], conn=CONN)
+                instances[row[0]] = psycho 
             elif class_name == 'Users':
-                user = Users(row[1], row[2], row[3], row[4], row[5], CONN, id = row[0])
+                user = Users(id = row[0], email=row[1], password=row[2], first=row[3], last=row[4], username=row[5], conn=CONN)
                 instances[row[0]] = user 
             elif class_name == 'Posts':
                 pass
@@ -92,8 +92,8 @@ def get_all(class_name, CONN):  # Return None if not found
         return None
 
 def delete_all(class_name, CONN):  # return -1 if not found
-    # if not get_all(class_name):
-    #     return -1
+    if not get_all(class_name, CONN):
+        return -1
     try:
         with CONN.cursor() as cur:
             cur.execute(
@@ -109,7 +109,14 @@ def delete_all(class_name, CONN):  # return -1 if not found
 def insert_one(class_name, CONN):
     table_list = initialize(class_name, CONN)
     if class_name == 'Psychologists':
-        Psychologists()
+        psycho = Psychologists('', '', '', CONN)
+        psycho.create_self(table_list[class_name])
+        clear()
+        if psycho.create() is not None:
+            table_list.update({psycho.id: psycho})
+            return 0
+        else:
+            return -1
     elif class_name == 'Users':
         user = Users('', '', '', '', '', CONN)
         user.create_self(table_list[class_name])
