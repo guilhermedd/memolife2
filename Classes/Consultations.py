@@ -31,13 +31,13 @@ class Consultations:
         while True:
 
             # Tentar converter a string da data para um objeto datetime
-            date_str = input("Enter the date in the format YYYY-MM-DD (e.g., 2023-11-14): \n")
+            date_str = input("Enter the date in the format DD/MM/YYYY (e.g., 14/11/2023): \n")
             try:
-                user_provided_date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+                user_provided_date = datetime.datetime.strptime(date_str, "%d/%m/%Y")
                 user_provided_date = user_provided_date.date()
                 break # Se a conversão for bem-sucedida, sair do loop
             except ValueError:
-                print("Invalid date format. Please use the format YYYY-MM-DD.")
+                print("Invalid date format. Please use the format DD/MM/YYYY.")
                 continue # Se houver um erro, continue solicitando a data
 
         # Fornecer lista de id_psychologists para o usuário escolher
@@ -55,13 +55,11 @@ class Consultations:
                 while index < 0 or index > len(pych_data):
                     index = int(input("Invalid index. Please choose a valid index: \n"))
 
-                self.id_psychologist = pych_data[index][0]
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
 
-
         self.date               = user_provided_date
-        self.id_psychologist    = id_psychologist
+        self.id_psychologist = pych_data[index][0]
     
     def data(self):
         return [self.email, self.password, self.first, self.last, self.username]

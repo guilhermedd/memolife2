@@ -24,10 +24,23 @@ class Psychologists:
             print("error:",error)
             return None
     
-    def create_self(self, psychologists_list):
+    def get_psychologists_emails(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT email FROM Psychologists WHERE not id = {self.id};",
+                )
+                psychologists_list = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+        return psychologists_list
+
+    def create_self(self):
         print("Please insert the following data:")
 
-        emails_taken = [psycho.email for psycho in psychologists_list.values()]
+        psychologists_list = self.get_psychologists_emails()
+
+        emails_taken = [email[0] for email in psychologists_list]
         email = input("Email (Maximum of 50 characters): \n")
         while len(email) > 50 or len(email) < 3 or '@' not in email or email in emails_taken:
             if len(email) > 50:

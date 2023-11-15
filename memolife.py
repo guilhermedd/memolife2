@@ -1,9 +1,9 @@
 import psycopg2
 
-from Psychologists import Psychologists  # 1
-from Users import Users  # 2
-from Posts import Posts  # 3
-from Consultations import Consultations  # 4
+from Classes.Psychologists import Psychologists  # 1
+from Classes.Users import Users  # 2
+from Classes.Posts import Posts  # 3
+from Classes.Consultations import Consultations  # 4
 
 import os
 import traceback
@@ -52,7 +52,6 @@ def initialize(class_name, connection):
     data[class_name] = instances
     return data 
 
-
 # List = {"class_name" : {"id": atributes}}
     
 table_list = initialize('Users', CONN)
@@ -92,7 +91,7 @@ def get_all(class_name, CONN):  # Return None if not found
 
 def delete_all(class_name, CONN):  # return -1 if not found
     if not get_all(class_name, CONN):
-        return -1
+        return (-1, None)
     try:
         with CONN.cursor() as cur:
             cur.execute(
@@ -100,10 +99,10 @@ def delete_all(class_name, CONN):  # return -1 if not found
             )
             CONN.commit()
             print(f"Deleted all {class_name}")
-            return 0
+            return (0, None)
     except (Exception, psycopg2.DatabaseError) as error:
         print("error:",error)
-        return -1
+        return (-1, None)
 
 def insert_one(class_name, CONN):
     table_list = initialize(class_name, CONN)
@@ -115,13 +114,13 @@ def insert_one(class_name, CONN):
     elif class_name == 'Posts':
         instance = Posts('', '', '', '', '', '', CONN)
 
-    instance.create_self(table_list[class_name])
+    instance.create_self()
     clear()
     if instance.create() is not None:
         table_list.update({instance.id: instance})
         return (0, instance)
     else:
-        return -1
+        return (-1, instance)
         
 CLASSES = ['Psychologists', 'Users', 'Posts', 'Consultations']
 FUNCTIONS = [get_all, delete_all, insert_one]
@@ -159,7 +158,7 @@ def admin_menu():
         clear()
 
     if answer_menu == EXIT_INDEX:
-        return
+        return -1
     answer = None
     
     # Show all classes
@@ -173,15 +172,15 @@ def admin_menu():
     # Call the function chosen
     func = FUNCTIONS[answer_menu-1](CLASSES[answer-1], CONN)
 
-    if func == None:
-        print("There is no data to show")
-    elif func == -1:
-        print("There was an error")
-    elif func == 0:
+    if func[0] == 0:
         print("\nEverything went well!")
+    elif func[0] == -1:
+        print("There was an error")
+    elif func[1] == None:
+        print("There is no data to show")
     else:
-        for instalce in func:
-            print(instalce.show())
+        for instance in func:
+            print(instance.show())
 
     input("\nPress any key to continue...")
 
@@ -239,17 +238,22 @@ def login(CONN):
 
         return (insert_one(class_name, CONN)[1], 0)
     elif option == 3:
-        return None
+        return None, None
 
 def menu():
+    current_user, role = login(CONN)  # role = 0 -> user, role = 1 -> admin
+
+    if role != None:
+        print(current_user.show(), role)
+
     while True:
         clear()
 
-        current_user = login(CONN)
+        if role == 1:
+            saida = admin_menu()
 
-        if current_user == None:
+        if current_user == None or saida == -1:
             break
-
 
 
 if __name__ == "__main__":

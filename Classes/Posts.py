@@ -30,7 +30,7 @@ class Posts:
             print("error:",error)
             return None
 
-    def create_self(self, _):
+    def create_self(self):
         print("Please insert the following data:")
 
         title = input("Title (Maximum of 50 characters): \n")
@@ -62,15 +62,16 @@ class Posts:
                 feeling = input("Feeling is too short (Minimum of 3 characters): \n")
 
         while True:
-            date_str = input("Enter the date in the format YYYY-MM-DD (e.g., 2023-11-14): \n")
+            date_str = input("Enter the date in the format DD/MM/YYYY (e.g., 14/11/2023): \n")
 
             # Tentar converter a string da data para um objeto datetime
             try:
-                user_provided_date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+                user_provided_date = datetime.datetime.strptime(date_str, "%d/%m/%Y")
+
                 user_provided_date = user_provided_date.date()
                 break # Se a conversão for bem-sucedida, sair do loop
             except ValueError:
-                print("Invalid date format. Please use the format YYYY-MM-DD.")
+                print("Invalid date format. Please use the format DD/MM/YYYY.")
                 continue # Se houver um erro, continue solicitando a data
 
         ispublic = input("Is this post public? (y/n): \n")
@@ -92,4 +93,16 @@ class Posts:
         return [self.title, self.summary, self.content, self.feeling, self.date, self.ispublic]
 
     def show(self):
-        return f"""Id: {self.id} | Title: {self.title} | Summary: {self.summary} | Content: {self.content} | Feeling: {self.feeling} | Date: {self.date} | IsPublic: {self.ispublic}"""
+        return f"""Id: {self.id}
+        Title: {self.title}
+        --------------
+        Summary: 
+        {self.summary}
+        --------------
+        Content: 
+        {self.content}
+        --------------
+        Feeling: {self.feeling}
+        Date: {self.date.strftime("%d/%m/%Y")}
+        This post {'IS' if self.ispublic else 'is NOT'} public!
+        """

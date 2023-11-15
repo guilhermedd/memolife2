@@ -26,10 +26,23 @@ class Users:
             print("error:",error)
             return None
     
-    def create_self(self, users_list):
+    def get_users_emails(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT email FROM Users WHERE not id = {self.id};",
+                )
+                users_list = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+        return users_list
+
+    def create_self(self):
         print("Please insert the following data:")
 
-        emails_taken = [user.email for user in users_list.values()]
+        users_list = self.get_users_emails()
+
+        emails_taken = [email[0] for email in users_list]
         email = input("Email (Maximum of 50 characters): \n")
         while len(email) > 50 or len(email) < 3 or '@' not in email or email in emails_taken:
             if len(email) > 50:
@@ -86,6 +99,18 @@ class Users:
     def show(self):
         return f"Id: {self.id} | Email: {self.email} | First Name: {self.first} | Last Name: {self.last} | Username: {self.username}"
         
-
+    def delete(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM Users WHERE id = %s;",
+                    (self.id,)
+                )
+                self.CONN.commit()
+                print("User deleted:\n", self.show())
+            return True
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return False
 
     
