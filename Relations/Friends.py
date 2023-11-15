@@ -1,5 +1,7 @@
 import psycopg2
 
+import Classes.Users as Users
+
 class Friends:
     def __init__(self, id_user, id_friend, conn, id = None):
         self.id                 = id
@@ -7,16 +9,52 @@ class Friends:
         self.id_friend          = id_friend
         self.CONN               = conn
     
+    # def get_users(self):
+        # try:
+        #     with self.CONN.cursor() as cur:
+        #         cur.execute(
+        #             f"SELECT * FROM Users WHERE not id = {self.id_user};",
+        #         )
+        #         users = cur.fetchone()
+        # except (Exception, psycopg2.DatabaseError) as error:
+        #     print("error:",error)
+        # return users
+    
     def create(self):
         try:
+            # users = self.get_users()
+
+            # if users == None:
+            #     print("There are no other users to befriend.")
+            #     return 0
+            
+            # for i, user in enumerate(users):
+            #     print(f"""Inddex = {i}\n{
+            #             Users(
+            #                 id = user[0], 
+            #                 email=user[1], 
+            #                 password=user[2], 
+            #                 first=user[3], 
+            #                 last=user[4],
+            #                 username=user[5],
+            #                 conn = self.CONN).show()
+            #                 }"""
+            #             )
+            # index = int(input("Choose the index of the Users you want to befriend: \n"))
+            # while index < 0 or index > len(users):
+            #     index = int(input("Invalid index. Please choose a valid index: \n"))
+            # self.id_friend = users[index][0]
+
             with self.CONN.cursor() as cur:
                 cur.execute(
                     "INSERT INTO Friends (id_user, id_friend) VALUES (%s, %s) RETURNING id;",
                     (self.id_user, self.id_friend)
                 )
+
                 self.CONN.commit()
                 pych_data = cur.fetchone()
                 self.id = pych_data[0]
+
                 print("Relation created:\n", self.show())
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
@@ -30,22 +68,85 @@ class Friends:
         try:
             with self.CONN.cursor() as cur:
                 cur.execute(
-                    f"SELECT * FROM Users WHERE not id = {self.id_user};",
+                    f"""SELECT * FROM users WHERE id <> {self.id_user} AND id NOT IN 
+                        (SELECT id_friend FROM Friends WHERE id_user = {self.id_user})
+                    """,
                 )
-                pych_data = cur.fetchone()
+                pych_data = cur.fetchall()
+
+                if pych_data == None:
+                    print("There are no other users to befriend.")
+                    return 0
 
                 for i, psych in enumerate(pych_data):
                     print(f" Index = {i} | Name: {psych[3]} {psych[4]} | Username: {psych[5]}")
                 
                 index = int(input("Choose the index of the Users you want to befriend: \n"))
-                while index < 0 or index > len(pych_data):
+                while index < 0 or index >= len(pych_data):
                     index = int(input("Invalid index. Please choose a valid index: \n"))
 
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
+            return None
 
         self.id_friend = pych_data[index][0]
     
+    def get_friends(self):
+        # Return a list of friends(Users)
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(f"SELECT * FROM Users WHERE id IN (SELECT id_friend FROM Friends WHERE id_user = {self.id_user});")
+                friends = cur.fetchall()
+                return friends
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return None
+
+    def delete(self, all):
+        friends = self.get_friends()
+        if friends != None:
+            if all:
+                for friend in friends:
+                    self.id_friend = friend[0]
+                    try:
+                        with self.CON.cursor() as cur:
+                            cur.execute(
+                                f"DELETE FROM Friends WHERE id_user = {self.id_user} AND id_friend = {self.id_friend};",
+                            )
+                            self.CONN.commit()
+                            print(f"Deleted {self.show()}")
+                    except (Exception, psycopg2.DatabaseError) as error:
+                        print("error:",error)
+                        return 0
+                return 1
+            else:
+                for i, friend in enumerate(friends):
+                    print(f" Index = {i} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}")
+
+                index = int(input("Choose the index of the friend you want to unfriend: \n"))
+
+                while index < 0 or index > len(friends):
+                    index = int(input("Invalid index. Please choose a valid index: \n"))
+
+                self.id_friend = friends[index][0]
+        
+        else:
+            print("You do not have friends")
+            return 0
+        
+        try:
+            with self.CON.cursor() as cur:
+                cur.execute(
+                    f"DELETE FROM Friends WHERE id_user = {self.id_user} AND id_friend = {self.id_friend};",
+                )
+                self.CONN.commit()
+                print(f"Deleted {self.show()}")
+                return 1
+        
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return 0
+        
     def show(self):
         try:
             with self.CONN.cursor() as cur:
@@ -62,10 +163,5 @@ class Friends:
             print("error:",error)
 
         return f"""
-        Me: Id: {user[0]} | Name: {user[3]} {user[4]} | Username: {user[5]}
-        Friend: Id: {friend[0]} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}
-        """
-        
-
-
-    
+        Id: {friend[0]} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}
+        """    

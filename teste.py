@@ -14,13 +14,15 @@ CONN = psycopg2.connect(
 
 with CONN.cursor() as cur:
     cur.execute(
-        f"SELECT ispublic FROM Posts WHERE id = 4;",
+        f"SELECT * FROM Users where id = 68;",
     )
-    users_list = cur.fetchall()[0]
+    users_list = cur.fetchall()
 
+    for user in users_list:
+        print(user)
     # emails_taken = [email[0] for email in users_list]
-    if users_list[0] == True:
-        print("True")
-    else:
-        print("False")
+    # if users_list:
+    #     print("True")
+    # else:
+    #     print("False")
     # print(users_list[0])

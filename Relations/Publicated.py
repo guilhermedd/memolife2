@@ -25,7 +25,7 @@ class Publicated:
                 self.date = datetime.datetime.strptime(date, "%d/%m/%Y").date()
                 time = now.strftime("%H:%M:%S")
                 self.time = datetime.datetime.strptime(time, "%H:%M:%S").time()
-                print("Relation created:\n", self.show())
+                print("Publicated relation created:\n", self.show())
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)

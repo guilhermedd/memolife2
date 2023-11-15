@@ -1,5 +1,12 @@
 import psycopg2
 
+from Relations.Friends import Friends
+from Relations.Publicated import Publicated
+from Relations.Read import Read
+
+from Classes.Posts import Posts
+from Classes.Consultations import Consultations
+
 class Users:
     def __init__(self, email, password, first, last, username, conn, id = None):
         self.id             = id
@@ -97,10 +104,188 @@ class Users:
         return [self.email, self.password, self.first, self.last, self.username]
 
     def show(self):
-        return f"Id: {self.id} | Email: {self.email} | First Name: {self.first} | Last Name: {self.last} | Username: {self.username}"
+        return f"""Id: {self.id}
+        Name: {self.first} {self.last}
+        Username: {self.username}
+        """
         
-    def delete(self):
+    def add_friend(self):
+        friend = Friends(self.id, '', self.CONN)
+        friend.create_self()
+
+        return 1 if friend.create() is not None else 0
+
+    def see_friends(self):
         try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT * FROM Users WHERE id in (SELECT id_friend FROM Friends WHERE id_user = {self.id});",
+                )
+                friends = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return None
+        return friends
+    
+    def create_post(self):
+        post = Posts('', '', '', '', '', '', self.CONN)
+        post.create_self()
+        if post.create() is None:
+            return 0
+        
+        if Read(self.id, post.id, self.CONN).create() is None:
+            return 0
+
+        publicated = Publicated(self.id, post.id, self.CONN)
+        return 1 if publicated.create() is not None else 0
+
+    def check_posts(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT * FROM Posts WHERE id in (SELECT id_post FROM Publicated WHERE id_user = {self.id});",
+                )
+                posts = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return None
+        return posts 
+    
+    def check_friends_posts(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT * FROM Posts WHERE id in (SELECT id_post FROM Publicated WHERE id_user in (SELECT id_friend FROM Friends WHERE id_user = {self.id}));",
+                )
+                posts = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return None
+        return posts
+    
+    def schedule_consultations(self):
+        consultation = Consultations('', self.id, '', '', '', self.CONN)
+        consultation.create_self()
+        if consultation.create() is None:
+            return 0
+        return 1
+
+    def check_consultations(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT * FROM Consultations WHERE id_user = {self.id};",
+                )
+                consultations = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return None
+        return consultations
+
+    def unfriend(self, all = False):
+        friendship = Friends(self.id, '', self.CONN)
+        return friendship.delete(all)
+
+    def delete_post(self, all = False):
+        # Have to delete: Read, Publicated, Post
+        # Select which post to delete
+        posts = self.check_posts()
+        if posts:
+            if all:
+                for post in posts:
+                    Posts(
+                        id=post[0], 
+                        title=post[1],
+                        summary=post[2], 
+                        content=post[3],
+                        feeling=post[4], 
+                        date=post[5], 
+                        ispublic=post[6], 
+                        conn=self.CONN).delete()
+                return 1
+            else:
+                for i, post in enumerate(posts):
+                    print("Index: ", i, '\n',
+                    Posts(
+                        id=post[0], 
+                        title=post[1],
+                        summary=post[2], 
+                        content=post[3],
+                        feeling=post[4], 
+                        date=post[5], 
+                        ispublic=post[6], 
+                        conn=self.CONN).show()
+                )
+                index = int(input("Choose the index of the post you want to delete: \n"))
+                while index < 0 or index > len(posts):
+                    index = int(input("Invalid index. Please choose a valid index: \n"))
+
+                return Posts(
+                        id=posts[index][0], 
+                        title=posts[index][1],
+                        summary=posts[index][2], 
+                        content=posts[index][3],
+                        feeling=posts[index][4], 
+                        date=posts[index][5], 
+                        ispublic=posts[index][6], 
+                        conn=self.CONN).delete()
+        else:
+            print("You do not have posts")
+            return 0
+
+    def delete_consultation(self, all = False):
+        consultations = self.check_consultations()
+
+        if consultations:
+            if all:
+                for consultation in consultations:
+                    Consultations(
+                        id=consultation[0], 
+                        id_user=consultation[1],
+                        date=consultation[2], 
+                        time=consultation[3],
+                        id_psychologist=consultation[4], 
+                        conn=self.CONN).delete()
+                return 1
+            else:
+                for i, consultation in enumerate(consultations):
+                    print("Index: ", i, '\n',
+                    Consultations(
+                        id=consultation[0], 
+                        id_user=consultation[1],
+                        date=consultation[2], 
+                        time=consultation[3],
+                        id_psychologist=consultation[4], 
+                        conn=self.CONN).show()
+                )
+                
+                index = int(input("Choose the index of the consultation you want to delete: \n"))
+                while index < 0 or index > len(consultations):
+                    index = int(input("Invalid index. Please choose a valid index: \n"))
+                
+                return Consultations(
+                        id=consultations[index][0], 
+                        id_user=consultations[index][1],
+                        date=consultations[index][2], 
+                        time=consultations[index][3],
+                        id_psychologist=consultations[index][4], 
+                        conn=self.CONN).delete()
+        else:
+            print("You do not have consultations")
+            return 0
+
+    def delete_account(self):
+        try:
+            # To delete User, first have to delete: Post, Friends, Consultations
+            # Delete Posts
+            self.delete_post(all=True)
+
+            # Delete Consultations
+            self.delete_consultation(all=True)
+
+            # Delete Friends
+            self.unfriend(all=True)
+        
             with self.CONN.cursor() as cur:
                 cur.execute(
                     "DELETE FROM Users WHERE id = %s;",
@@ -108,9 +293,7 @@ class Users:
                 )
                 self.CONN.commit()
                 print("User deleted:\n", self.show())
-            return True
+            return 1
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
-            return False
-
-    
+            return 0

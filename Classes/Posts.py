@@ -80,14 +80,12 @@ class Posts:
 
         ispublic = ispublic == 'y'
 
-
         self.title = title
         self.summary = summary
         self.content = content
         self.feeling = feeling
         self.date = user_provided_date
         self.ispublic = ispublic
-
 
     def data(self):
         return [self.title, self.summary, self.content, self.feeling, self.date, self.ispublic]
@@ -106,3 +104,27 @@ class Posts:
         Date: {self.date.strftime("%d/%m/%Y")}
         This post {'IS' if self.ispublic else 'is NOT'} public!
         """
+    
+    def delete(self):
+        # Delete all relations
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM Read WHERE id_post = %s;",
+                    (self.id)
+                    )
+                self.CONN.commit()
+                cur.execute(
+                    "DELETE FROM Publicated WHERE id_post = %s;", 
+                    (self.id)
+                    )
+                self.CONN.commit()
+                cur.execute(
+                    f"DELETE FROM Posts WHERE id = {self.id};",
+                )
+                self.CONN.commit()
+                print(f"Deleted {self.show()}")
+                return 1
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return 0

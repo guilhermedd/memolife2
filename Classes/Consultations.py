@@ -28,18 +28,6 @@ class Consultations:
     def create_self(self):
         print("Please insert the following data:")
 
-        while True:
-
-            # Tentar converter a string da data para um objeto datetime
-            date_str = input("Enter the date in the format DD/MM/YYYY (e.g., 14/11/2023): \n")
-            try:
-                user_provided_date = datetime.datetime.strptime(date_str, "%d/%m/%Y")
-                user_provided_date = user_provided_date.date()
-                break # Se a conversão for bem-sucedida, sair do loop
-            except ValueError:
-                print("Invalid date format. Please use the format DD/MM/YYYY.")
-                continue # Se houver um erro, continue solicitando a data
-
         # Fornecer lista de id_psychologists para o usuário escolher
         try:
             with self.CONN.cursor() as cur:
@@ -54,9 +42,33 @@ class Consultations:
                 index = int(input("Choose the index of the psychologist you want to consult: \n"))
                 while index < 0 or index > len(pych_data):
                     index = int(input("Invalid index. Please choose a valid index: \n"))
-
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
+
+        while True:
+
+            # Tentar converter a string da data para um objeto datetime
+            date_str = input("Enter the date in the format DD/MM/YYYY (e.g., 14/11/2023): \n")
+            try:
+                user_provided_date = datetime.datetime.strptime(date_str, "%d/%m/%Y")
+                user_provided_date = user_provided_date.date()
+                break # Se a conversão for bem-sucedida, sair do loop
+            except ValueError:
+                print("Invalid date format. Please use the format DD/MM/YYYY.")
+                continue # Se houver um erro, continue solicitando a data
+
+        # If the psychologist has more than 5 consultations that day, ask for another date
+        while True:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT COUNT(*) FROM Consultations WHERE id_psychologist = {pych_data[index][0]} AND date = '{user_provided_date}';",
+                )
+                count = cur.fetchone()[0]
+                if count >= 5:
+                    print("This psychologist has more than 5 consultations that day. Please choose another date.")
+                    continue
+                else:
+                    break
 
         self.date               = user_provided_date
         self.id_psychologist = pych_data[index][0]
@@ -64,9 +76,55 @@ class Consultations:
     def data(self):
         return [self.email, self.password, self.first, self.last, self.username]
 
-    def show(self):
-        return f"Id: {self.id} | Email: {self.email} | First Name: {self.first} | Last Name: {self.last} | Username: {self.username}"
+    def get_psychologists(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT * FROM Psychologists WHERE not id = {self.id_psychologist};",
+                )
+                pych_data = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+        return pych_data
+
+    def get_user(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT * FROM Users WHERE id = {self.id_user};",
+                )
+                user = cur.fetchone()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+        return user
+
+    def delete(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"DELETE FROM Consultations WHERE id = {self.id};",
+                )
+                self.CONN.commit()
+                print(f"Deleted {self.show()}")
+                return 1
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("error:",error)
+            return 0
         
+    def show(self):
+        psych = self.get_psychologists()
+        user = self.get_user()
+
+        return f"""Id: {self.id}
+        Psychologist: 
+        Id: {psych[0]}
+        Name: {psych[1]}
+        -----------------
+        Patient:
+        Id: {user[0]}
+        Name: {user[3]} {user[4]}
+        Username: {user[5]}
+        """
 
 
     
