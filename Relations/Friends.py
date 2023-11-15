@@ -9,60 +9,25 @@ class Friends:
         self.id_friend          = id_friend
         self.CONN               = conn
     
-    # def get_users(self):
-        # try:
-        #     with self.CONN.cursor() as cur:
-        #         cur.execute(
-        #             f"SELECT * FROM Users WHERE not id = {self.id_user};",
-        #         )
-        #         users = cur.fetchone()
-        # except (Exception, psycopg2.DatabaseError) as error:
-        #     print("error:",error)
-        # return users
-    
     def create(self):
         try:
-            # users = self.get_users()
-
-            # if users == None:
-            #     print("There are no other users to befriend.")
-            #     return 0
-            
-            # for i, user in enumerate(users):
-            #     print(f"""Inddex = {i}\n{
-            #             Users(
-            #                 id = user[0], 
-            #                 email=user[1], 
-            #                 password=user[2], 
-            #                 first=user[3], 
-            #                 last=user[4],
-            #                 username=user[5],
-            #                 conn = self.CONN).show()
-            #                 }"""
-            #             )
-            # index = int(input("Choose the index of the Users you want to befriend: \n"))
-            # while index < 0 or index > len(users):
-            #     index = int(input("Invalid index. Please choose a valid index: \n"))
-            # self.id_friend = users[index][0]
-
             with self.CONN.cursor() as cur:
                 cur.execute(
                     "INSERT INTO Friends (id_user, id_friend) VALUES (%s, %s) RETURNING id;",
                     (self.id_user, self.id_friend)
                 )
 
-                self.CONN.commit()
                 pych_data = cur.fetchone()
                 self.id = pych_data[0]
 
                 print("Relation created:\n", self.show())
+                self.CONN.commit()
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
             return None
     
     def create_self(self):
-        print("Please insert the following data:")
 
         # Fornecer lista de id_psychologists para o usuário escolher
         try:
@@ -74,9 +39,11 @@ class Friends:
                 )
                 pych_data = cur.fetchall()
 
-                if pych_data == None:
+                if not pych_data:
                     print("There are no other users to befriend.")
                     return 0
+                
+                print("Please insert the following data:")
 
                 for i, psych in enumerate(pych_data):
                     print(f" Index = {i} | Name: {psych[3]} {psych[4]} | Username: {psych[5]}")
@@ -85,11 +52,12 @@ class Friends:
                 while index < 0 or index >= len(pych_data):
                     index = int(input("Invalid index. Please choose a valid index: \n"))
 
+                self.id_friend = pych_data[index][0]
+                return 1
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
-            return None
+            return 0
 
-        self.id_friend = pych_data[index][0]
     
     def get_friends(self):
         # Return a list of friends(Users)

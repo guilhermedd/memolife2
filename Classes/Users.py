@@ -24,10 +24,10 @@ class Users:
                     "INSERT INTO Users (email, password, first, last, username) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
                     (self.email, self.password, self.first, self.last, self.username)
                 )
-                self.CONN.commit()
                 pych_data = cur.fetchone()
                 self.id = pych_data[0]
                 print("User created:\n", self.show())
+                self.CONN.commit()
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
@@ -112,8 +112,9 @@ class Users:
     def add_friend(self):
         friend = Friends(self.id, '', self.CONN)
         friend.create_self()
-
-        return 1 if friend.create() is not None else 0
+        if friend.create() is None:
+            return 0
+        return 1
 
     def see_friends(self):
         try:
@@ -133,10 +134,10 @@ class Users:
         if post.create() is None:
             return 0
         
-        if Read(self.id, post.id, self.CONN).create() is None:
+        if Read(self.id, post.id, self.CONN) is None:
             return 0
 
-        publicated = Publicated(self.id, post.id, self.CONN)
+        publicated = Publicated(date='', time='', id_user=self.id, id_post=post.id, conn=self.CONN)
         return 1 if publicated.create() is not None else 0
 
     def check_posts(self):

@@ -167,6 +167,7 @@ def check_my_posts(current_user, CONN):
                     conn=CONN).show()
             )
         return 1
+    print("You haven't posted anything yet!")
     return 0
 
 def check_friends_posts(current_user, CONN):

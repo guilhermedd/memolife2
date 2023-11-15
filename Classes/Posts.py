@@ -22,12 +22,13 @@ class Posts:
                 self.CONN.commit()
 
                 post_data = cur.fetchone()
+            print('Post_data', post_data[0])
             self.id = post_data[0]
-            print("Psychologist created:\n", self.show())
+            print("Post created:\n", self.show())
 
             return post_data
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Error em Posts:",error)
             return None
 
     def create_self(self):

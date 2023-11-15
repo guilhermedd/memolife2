@@ -14,10 +14,10 @@ class Read:
                 cur.execute(
                     f"SELECT id FROM Users;",
                 )
-                readers = cur.fetchone()
+                readers = cur.fetchall()
                 readers = [reader[0] for reader in readers]
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Read error(get_readers_id):",error)
         return readers
     
     def is_post_public(self):
@@ -26,14 +26,17 @@ class Read:
                 cur.execute(
                     f"SELECT ispublic FROM Posts WHERE id = {self.id_post};",
                 )
-                posts = cur.fetchone()[0]
+                result = cur.fetchall()
+
+                if result is not None:  # Check if the result is not None
+                    return result[0]  # Return the first column value if available
+                else:
+                    return False  # Assuming the post is not public if there is no result
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
-        return posts[0]
-    
-    def create(self):  # create a table for  
-        # IF post is public, create a read for all friends
-        # ELSE create a read for no one
+            print("Read error(is_post_public):", error)
+            return False  # Return False in case of an error
+  
+    def create(self):
         if self.is_post_public():
             for reader_id in self.get_readers_id():
                 try:
@@ -42,15 +45,19 @@ class Read:
                             "INSERT INTO Read (id_user, id_post) VALUES (%s, %s) RETURNING id;",
                             (reader_id, self.id_post)
                         )
-                        self.CONN.commit()
                         pych_data = cur.fetchone()
                         self.id = pych_data[0]
-                        print("Relation created:\n", self.show())
+                        print("Read relation created:\n")
+                        self.show()
+                        self.CONN.commit()
                     return pych_data
                 except (Exception, psycopg2.DatabaseError) as error:
-                    print("error:",error)
+                    print("Read error(create):", error)
                     return None
-   
+        else:
+            print("Post is not public. No Read relation created.")
+            return None
+
     def delete(self):
         try:
             with self.CONN.cursor() as cur:
@@ -61,7 +68,7 @@ class Read:
                 print(f"Deleted {self.show()}")
                 return 0
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Read error(Delete):",error)
             return -1
     
     def show(self):
@@ -77,7 +84,8 @@ class Read:
                 friend = cur.fetchone()
 
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            return ("Read error(Show):")
+
 
         return f"""
         Me: Id: {user[0]} | Name: {user[3]} {user[4]} | Username: {user[5]}

@@ -34,7 +34,7 @@ class Consultations:
                 cur.execute(
                     "SELECT * FROM Psychologists;",
                 )
-                pych_data = cur.fetchone()
+                pych_data = cur.fetchall()
 
                 for i, psych in enumerate(pych_data):
                     print(f" Index = {i} | Id: {psych[0]} | Name: {psych[1]}")
@@ -63,7 +63,7 @@ class Consultations:
                 cur.execute(
                     f"SELECT COUNT(*) FROM Consultations WHERE id_psychologist = {pych_data[index][0]} AND date = '{user_provided_date}';",
                 )
-                count = cur.fetchone()[0]
+                count = cur.fetchall()[0]
                 if count >= 5:
                     print("This psychologist has more than 5 consultations that day. Please choose another date.")
                     continue
@@ -93,7 +93,7 @@ class Consultations:
                 cur.execute(
                     f"SELECT * FROM Users WHERE id = {self.id_user};",
                 )
-                user = cur.fetchone()
+                user = cur.fetchall()
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
         return user
