@@ -142,8 +142,8 @@ def see_friends(current_user, CONN):
                     email=friend[1],
                     password=friend[2], 
                     first=friend[3],
-                    last=friend[3], 
-                    username=friend[3], 
+                    last=friend[4], 
+                    username=friend[5], 
                     conn=CONN).show()
             )
 
@@ -187,14 +187,14 @@ def check_friends_posts(current_user, CONN):
                     conn=CONN).show()
             )
         return 1
+    if posts == []:
+        print("Your friends haven't posted anything yet!")
+        return 1
+    
     return 0
 
 def schedule_consultation(current_user, CONN):
-    consultation = current_user.schedule_consultation()
-    if consultation:
-        print(Consultations(id=consultation[0], date=consultation[1], id_user=consultation[2], id_psychologist=consultation[3], conn=CONN).show())
-        return 1
-    return 0
+    return current_user.schedule_consultations()
 
 def check_consultations(current_user, CONN):
     consultations = current_user.check_consultations()
@@ -202,6 +202,9 @@ def check_consultations(current_user, CONN):
         for consultation in consultations:
             print(Consultations(id=consultation[0], date=consultation[1], id_user=consultation[2], id_psychologist=consultation[3], conn=CONN).show())
         return 1
+    elif consultations == []:
+        print("You don't have any consultations yet!")
+        return 1 
     return 0
 
 def unfollow_friend(current_user, CONN):
@@ -211,7 +214,7 @@ def delete_post(current_user, CONN):
     return current_user.delete_post()
 
 def unschedule_consultation(current_user, CONN):
-    return current_user.unschedule_consultation()
+    return current_user.delete_consultation()
 
 def delete_account(current_user, CONN):
     return current_user.delete_account()

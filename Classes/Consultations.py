@@ -16,18 +16,16 @@ class Consultations:
                     "INSERT INTO Consultations (date, id_user, id_psychologist) VALUES (%s, %s, %s) RETURNING id;",
                     (self.date, self.id_user, self.id_psychologist)
                 )
-                self.CONN.commit()
                 pych_data = cur.fetchone()
                 self.id = pych_data[0]
                 print("User created:\n", self.show())
+                self.CONN.commit()
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
             return None
     
     def create_self(self):
-        print("Please insert the following data:")
-
         # Fornecer lista de id_psychologists para o usuário escolher
         try:
             with self.CONN.cursor() as cur:
@@ -36,6 +34,12 @@ class Consultations:
                 )
                 pych_data = cur.fetchall()
 
+                if not pych_data:
+                    print("There are no psychologists to choose from.")
+                    return 0
+
+                print("Please insert the following data:")
+                
                 for i, psych in enumerate(pych_data):
                     print(f" Index = {i} | Id: {psych[0]} | Name: {psych[1]}")
                 
@@ -43,8 +47,9 @@ class Consultations:
                 while index < 0 or index > len(pych_data):
                     index = int(input("Invalid index. Please choose a valid index: \n"))
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
-
+            print("Consultation error(create_self):",error)
+            return 0
+        
         while True:
 
             # Tentar converter a string da data para um objeto datetime
@@ -68,10 +73,12 @@ class Consultations:
                     print("This psychologist has more than 5 consultations that day. Please choose another date.")
                     continue
                 else:
+                    print("This date is available!")
                     break
 
         self.date               = user_provided_date
         self.id_psychologist = pych_data[index][0]
+        return 1
     
     def data(self):
         return [self.email, self.password, self.first, self.last, self.username]
@@ -82,7 +89,7 @@ class Consultations:
                 cur.execute(
                     f"SELECT * FROM Psychologists WHERE not id = {self.id_psychologist};",
                 )
-                pych_data = cur.fetchall()
+                pych_data = cur.fetchone()
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
         return pych_data
@@ -93,7 +100,7 @@ class Consultations:
                 cur.execute(
                     f"SELECT * FROM Users WHERE id = {self.id_user};",
                 )
-                user = cur.fetchall()
+                user = cur.fetchone()
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
         return user

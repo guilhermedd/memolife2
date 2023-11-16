@@ -24,7 +24,7 @@ class Friends:
                 self.CONN.commit()
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Friends error(create):",error)
             return None
     
     def create_self(self):
@@ -47,18 +47,21 @@ class Friends:
 
                 for i, psych in enumerate(pych_data):
                     print(f" Index = {i} | Name: {psych[3]} {psych[4]} | Username: {psych[5]}")
+                print(" Index = -1 | Exit")
                 
                 index = int(input("Choose the index of the Users you want to befriend: \n"))
-                while index < 0 or index >= len(pych_data):
-                    index = int(input("Invalid index. Please choose a valid index: \n"))
+                while index < -1 or index >= len(pych_data):
+                    index = int(input("Choose the index of the Users you want to befriend:\n"))
+                
+                if index == -1:
+                    return 0
 
                 self.id_friend = pych_data[index][0]
                 return 1
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Friends error(create):",error)
             return 0
-
-    
+   
     def get_friends(self):
         # Return a list of friends(Users)
         try:
@@ -67,7 +70,7 @@ class Friends:
                 friends = cur.fetchall()
                 return friends
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Friends error(create_self):",error)
             return None
 
     def delete(self, all):
@@ -103,16 +106,16 @@ class Friends:
             return 0
         
         try:
-            with self.CON.cursor() as cur:
+            with self.CONN.cursor() as cur:
                 cur.execute(
                     f"DELETE FROM Friends WHERE id_user = {self.id_user} AND id_friend = {self.id_friend};",
                 )
-                self.CONN.commit()
                 print(f"Deleted {self.show()}")
+                self.CONN.commit()
                 return 1
         
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Friends error(delete):",error)
             return 0
         
     def show(self):
@@ -128,7 +131,7 @@ class Friends:
                 friend = cur.fetchone()
 
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Friends error(show):",error)
 
         return f"""
         Id: {friend[0]} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}

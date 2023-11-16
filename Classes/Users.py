@@ -111,7 +111,9 @@ class Users:
         
     def add_friend(self):
         friend = Friends(self.id, '', self.CONN)
-        friend.create_self()
+        available = friend.create_self()
+        if available == 0:
+            return 1
         if friend.create() is None:
             return 0
         return 1
@@ -130,7 +132,9 @@ class Users:
     
     def create_post(self):
         post = Posts('', '', '', '', '', '', self.CONN)
-        post.create_self()
+        if not post.create_self():
+            return 1
+        
         if post.create() is None:
             return 0
         
@@ -160,13 +164,17 @@ class Users:
                 )
                 posts = cur.fetchall()
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Users error(check_friends_posts):",error)
             return None
         return posts
     
     def schedule_consultations(self):
-        consultation = Consultations('', self.id, '', '', '', self.CONN)
-        consultation.create_self()
+        consultation = Consultations(date='', id_user=self.id, id_psychologist='', conn=self.CONN, id='')
+        valid = consultation.create_self()
+        if valid == 0:
+            return 1
+        elif valid == None:
+            return 0
         if consultation.create() is None:
             return 0
         return 1
@@ -184,7 +192,7 @@ class Users:
         return consultations
 
     def unfriend(self, all = False):
-        friendship = Friends(self.id, '', self.CONN)
+        friendship = Friends(id_user=self.id, id_friend='', conn=self.CONN)
         return friendship.delete(all)
 
     def delete_post(self, all = False):
@@ -220,16 +228,16 @@ class Users:
                 index = int(input("Choose the index of the post you want to delete: \n"))
                 while index < 0 or index > len(posts):
                     index = int(input("Invalid index. Please choose a valid index: \n"))
-
                 return Posts(
-                        id=posts[index][0], 
+                        id=posts[index][0],
                         title=posts[index][1],
-                        summary=posts[index][2], 
+                        summary=posts[index][2],
                         content=posts[index][3],
-                        feeling=posts[index][4], 
-                        date=posts[index][5], 
-                        ispublic=posts[index][6], 
-                        conn=self.CONN).delete()
+                        feeling=posts[index][4],
+                        date=posts[index][5],
+                        ispublic=posts[index][6],
+                        conn=self.CONN
+                    ).delete()
         else:
             print("You do not have posts")
             return 0
@@ -273,7 +281,7 @@ class Users:
                         conn=self.CONN).delete()
         else:
             print("You do not have consultations")
-            return 0
+            return 1
 
     def delete_account(self):
         try:

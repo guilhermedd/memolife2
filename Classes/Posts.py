@@ -34,6 +34,14 @@ class Posts:
     def create_self(self):
         print("Please insert the following data:")
 
+        print("Type -1 to Exit or 1 to Continue!")
+        while True:
+            index = int(input("Do you want to continue?: \n"))
+            if index == -1:
+                return 0
+            if index == 1:
+                break
+
         title = input("Title (Maximum of 50 characters): \n")
         while len(title) > 50 or len(title) < 3:
             if len(email) > 50:
@@ -88,6 +96,8 @@ class Posts:
         self.date = user_provided_date
         self.ispublic = ispublic
 
+        return 1
+
     def data(self):
         return [self.title, self.summary, self.content, self.feeling, self.date, self.ispublic]
 
@@ -111,21 +121,17 @@ class Posts:
         try:
             with self.CONN.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM Read WHERE id_post = %s;",
-                    (self.id)
+                    f"DELETE FROM Read WHERE id_post = {self.id};"
                     )
-                self.CONN.commit()
                 cur.execute(
-                    "DELETE FROM Publicated WHERE id_post = %s;", 
-                    (self.id)
+                    f"DELETE FROM Publicated WHERE id_post = {self.id};", 
                     )
-                self.CONN.commit()
                 cur.execute(
                     f"DELETE FROM Posts WHERE id = {self.id};",
                 )
-                self.CONN.commit()
                 print(f"Deleted {self.show()}")
+                self.CONN.commit()
                 return 1
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Posts error(delete):",error)
             return 0
