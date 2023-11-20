@@ -120,7 +120,7 @@ def insert_one(class_name, CONN):
         instance = Posts('', '', '', '', '', '', CONN)
 
     instance.create_self()
-    clear()
+    # clear()
     if instance.create() is not None:
         table_list.update({instance.id: instance})
         return (0, instance)
@@ -235,6 +235,11 @@ USER_FUNCTIONS = [
                     unschedule_consultation, 
                     delete_account
                 ]
+PSYCHO_FUNCTIONS = [
+                    check_consultations, 
+                    unschedule_consultation, 
+                    delete_account
+                ]
 
 def admin_options(exit_index):
     print("Welcome to Memolife!\n")
@@ -259,6 +264,15 @@ def user_options(exit_index):
     print("| 9 - Delete a Post")
     print("| 10 - Unschedule a Consultation")
     print("| 11 - Delete my Account")
+    print(f"| {exit_index} - Exit")
+    print("---------------------------")
+
+def psycho_options(exit_index):
+    print("Welcome to Memolife!\n")
+    print("---------------------------")
+    print("| 1 - Check all my Consultations")
+    print("| 2 - Unschedule a Consultation")
+    print("| 3 - Delete my Account")
     print(f"| {exit_index} - Exit")
     print("---------------------------")
 
@@ -341,6 +355,35 @@ def user_menu(current_user):
 
     input("\nPress any key to continue...")
 
+def psycho_menu(current_user):
+    # Pick a option
+    answer_menu = None
+    EXIT_INDEX = 4
+
+    while not answer_menu or answer_menu < 1 or answer_menu > EXIT_INDEX:
+        psycho_options(EXIT_INDEX)
+
+        answer_menu = int(input("\nChoose an option:\n"))
+        clear()
+
+    # Exit
+    if answer_menu == EXIT_INDEX:
+        return -1
+
+    # Call the function chosen
+    func = PSYCHO_FUNCTIONS[answer_menu-1](current_user, CONN)
+
+    if func == 1:
+        print("\nEverything went well!")
+        if [answer_menu-1] == 3:
+            return -1
+    elif func == 0:
+        print("There was an error")
+    elif func == None:
+        pass
+
+    input("\nPress any key to continue...")
+
 def login(CONN):
     clear()
     print("Welcome to Memolife!\n")
@@ -391,7 +434,7 @@ def login(CONN):
             print("Welcome back!")
             print(current_user.show())
 
-            class_name = 0 if class_name == 'Users' else 1
+            class_name = 0 if class_name == 'Users' else 2
             return (current_user, class_name)
         else:
             option = 2
@@ -403,7 +446,8 @@ def login(CONN):
             class_name = int(input('You can create the following account type:\nUser (1)\nPsychologist (2)\n'))
         class_name = 'Users' if class_name == 1 else 'Psychologists'
 
-        return (insert_one(class_name, CONN)[1], 0)
+        role = 0 if class_name == 'Users' else 2
+        return (insert_one(class_name, CONN)[1], role)
     elif option == 3:
         return None, None
 
@@ -415,13 +459,13 @@ def menu():
 
     while True:
         clear()
-
         if role == 1:
             saida = admin_menu()
         elif role == 0:
             saida = user_menu(current_user)
-        elif role == 1:
-            saida = admin_menu()        
+        elif role == 2:
+            print('psycho_menu')
+            saida = psycho_menu(current_user)        
 
         if current_user == None or saida == -1:
             break

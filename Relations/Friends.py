@@ -10,6 +10,15 @@ class Friends:
         self.CONN               = conn
     
     def create(self):
+        with open('password.txt', 'r') as file:
+            PASSWORD = file.read().splitlines()[0]
+# Conectar ao banco de dados PostgreSQL
+        self.CONN = psycopg2.connect(
+            host="localhost",
+            database="memolife",
+            user="postgres",
+            password=PASSWORD
+        )
         try:
             with self.CONN.cursor() as cur:
                 cur.execute(

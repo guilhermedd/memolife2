@@ -11,6 +11,15 @@ class Consultations:
     
     def create(self):
         try:
+            with open('password.txt', 'r') as file:
+                PASSWORD = file.read().splitlines()[0]
+# Conectar ao banco de dados PostgreSQL
+            self.CONN = psycopg2.connect(
+                host="localhost",
+                database="memolife",
+                user="postgres",
+                password=PASSWORD
+            )
             with self.CONN.cursor() as cur:
                 cur.execute(
                     "INSERT INTO Consultations (date, id_user, id_psychologist) VALUES (%s, %s, %s) RETURNING id;",
@@ -102,9 +111,10 @@ class Consultations:
                     f"SELECT * FROM Users WHERE id = {self.id_user};",
                 )
                 user = cur.fetchone()
+                return user
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
-        return user
+            return []
 
     def delete(self):
         try:

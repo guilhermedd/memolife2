@@ -37,6 +37,15 @@ class Read:
             return False  # Return False in case of an error
   
     def create(self):
+        with open('password.txt', 'r') as file:
+                PASSWORD = file.read().splitlines()[0]
+# Conectar ao banco de dados PostgreSQL
+        self.CONN = psycopg2.connect(
+            host="localhost",
+            database="memolife",
+            user="postgres",
+            password=PASSWORD
+        )
         if self.is_post_public():
             for reader_id in self.get_readers_id():
                 try:

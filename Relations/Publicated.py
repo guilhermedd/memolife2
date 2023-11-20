@@ -12,6 +12,15 @@ class Publicated:
     
     def create(self):
         try:
+            with open('password.txt', 'r') as file:
+                PASSWORD = file.read().splitlines()[0]
+# Conectar ao banco de dados PostgreSQL
+            self.CONN = psycopg2.connect(
+                host="localhost",
+                database="memolife",
+                user="postgres",
+                password=PASSWORD
+            )
             with self.CONN.cursor() as cur:
                 now = datetime.datetime.now()
                 date = now.strftime("%d/%m/%Y")

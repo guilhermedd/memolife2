@@ -18,7 +18,16 @@ class Users:
         self.CONN           = conn
     
     def create(self):
-        try:
+        try: 
+            with open('password.txt', 'r') as file:
+                PASSWORD = file.read().splitlines()[0]
+# Conectar ao banco de dados PostgreSQL
+            self.CONN = psycopg2.connect(
+                host="localhost",
+                database="memolife",
+                user="postgres",
+                password=PASSWORD
+            )
             with self.CONN.cursor() as cur:
                 cur.execute(
                     "INSERT INTO Users (email, password, first, last, username) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
@@ -41,7 +50,20 @@ class Users:
                 )
                 users_list = cur.fetchall()
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            # print("error:",error)
+            return []
+        return users_list
+
+    def get_usernames(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"SELECT username FROM Users WHERE not id = {self.id};",
+                )
+                users_list = cur.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            # print("error:",error)
+            return []
         return users_list
 
     def create_self(self):
@@ -84,7 +106,7 @@ class Users:
                 last = input("Last name is too short (Minimum of 3 characters): \n")
         last = last.title()
 
-        usernames_taken = [user.username for user in users_list.values()]
+        usernames_taken = [username for username in self.get_usernames()]
         username = input("Username (Maximum of 20 characters): \n")
         while len(username) > 20 or username in usernames_taken or len(username) < 3:
             if len(username) > 20:
@@ -99,6 +121,8 @@ class Users:
         self.first      = first
         self.last       = last
         self.username   = username
+
+        print("User Created")
     
     def data(self):
         return [self.email, self.password, self.first, self.last, self.username]
