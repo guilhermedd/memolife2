@@ -75,48 +75,42 @@ class Friends:
 
     def delete(self, all):
         friends = self.get_friends()
-        if friends != None:
-            if all:
-                for friend in friends:
-                    self.id_friend = friend[0]
-                    try:
-                        with self.CON.cursor() as cur:
-                            cur.execute(
-                                f"DELETE FROM Friends WHERE id_user = {self.id_user} AND id_friend = {self.id_friend};",
-                            )
-                            self.CONN.commit()
-                            print(f"Deleted {self.show()}")
-                    except (Exception, psycopg2.DatabaseError) as error:
-                        print("error:",error)
-                        return 0
-                return 1
-            else:
-                for i, friend in enumerate(friends):
-                    print(f" Index = {i} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}")
+        if friends:
+            try:
+                with self.CONN.cursor() as cur:
+                    if all:
+                        cur.execute(
+                            f"DELETE FROM Friends WHERE id_user = {self.id_user} OR id_friend = {self.id_user};"
+                        )
+                        print(f"Deleted friends")
+                    else:
+                        for i, friend in enumerate(friends):
+                            print(f" Index = {i} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}")
 
-                index = int(input("Choose the index of the friend you want to unfriend: \n"))
+                        index = int(input("Choose the index of the friend you want to unfriend: \n"))
 
-                while index < 0 or index > len(friends):
-                    index = int(input("Invalid index. Please choose a valid index: \n"))
+                        while index < 0 or index >= len(friends):
+                            index = int(input("Invalid index. Please choose a valid index: \n"))
 
-                self.id_friend = friends[index][0]
-        
+                        self.id_friend = friends[index][0]
+
+                        cur.execute(
+                            f"DELETE FROM Friends WHERE id_user = {self.id_user} AND id_friend = {self.id_friend};"
+                        )
+                        print(f"Deleted friend for {self.show()}")
+                    
+                    self.CONN.commit()
+                    return 1
+
+            except (Exception, psycopg2.DatabaseError) as error:
+                print("Friends error(delete):", error)
+                return 0
+
         else:
             print("You do not have friends")
             return 0
-        
-        try:
-            with self.CONN.cursor() as cur:
-                cur.execute(
-                    f"DELETE FROM Friends WHERE id_user = {self.id_user} AND id_friend = {self.id_friend};",
-                )
-                print(f"Deleted {self.show()}")
-                self.CONN.commit()
-                return 1
-        
-        except (Exception, psycopg2.DatabaseError) as error:
-            print("Friends error(delete):",error)
-            return 0
+
+
         
     def show(self):
         try:
@@ -134,5 +128,13 @@ class Friends:
             print("Friends error(show):",error)
 
         return f"""
-        Id: {friend[0]} | Name: {friend[3]} {friend[4]} | Username: {friend[5]}
+        User
+        Id: {user[0]}
+        Name: {user[3]} {user[4]}
+        Username: {user[5]}
+        -------------------
+        Friend:
+        Id: {friend[0]}
+        Name: {friend[3]} {friend[4]}
+        Username: {friend[5]}
         """    

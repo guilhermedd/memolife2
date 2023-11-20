@@ -151,9 +151,10 @@ def create_post(current_user, CONN):
     return current_user.create_post()
 
 def check_my_posts(current_user, CONN):
-    posts = current_user.check_posts()
+    posts, post_count = current_user.check_posts()
 
     if posts:
+        print(f"You have {post_count} posts!")
         for post in posts:
             print(
                 Posts(
@@ -331,6 +332,8 @@ def user_menu(current_user):
 
     if func == 1:
         print("\nEverything went well!")
+        if [answer_menu-1] == 11:
+            return -1
     elif func == 0:
         print("There was an error")
     elif func == None:

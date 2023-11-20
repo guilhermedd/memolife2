@@ -102,6 +102,23 @@ class Posts:
         return [self.title, self.summary, self.content, self.feeling, self.date, self.ispublic]
 
     def show(self):
+        try:
+            with self.CONN.cursor() as cur:
+                cur.execute(f"""
+                    SELECT u.*
+                    FROM Users u
+                    JOIN Publicated p ON u.ID = p.id_user
+                    JOIN Posts pos ON p.id_post = pos.ID
+                    WHERE pos.ID = {self.id};
+                """)
+                user = cur.fetchone()
+        except (Exception, psycopg2.DatabaseError) as error:
+            # print("Posts error(show):",error)
+            user = None
+            pass
+
+        user = f"User: {user[3]} {user[4]} ({user[5]})" if user != None else "User: None"
+
         return f"""Id: {self.id}
         Title: {self.title}
         --------------
@@ -114,6 +131,7 @@ class Posts:
         Feeling: {self.feeling}
         Date: {self.date.strftime("%d/%m/%Y")}
         This post {'IS' if self.ispublic else 'is NOT'} public!
+        {user}
         """
     
     def delete(self):

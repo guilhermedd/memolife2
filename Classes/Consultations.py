@@ -22,7 +22,7 @@ class Consultations:
                 self.CONN.commit()
             return pych_data
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("Consultation error(Create):",error)
             return None
     
     def create_self(self):
@@ -68,16 +68,16 @@ class Consultations:
                 cur.execute(
                     f"SELECT COUNT(*) FROM Consultations WHERE id_psychologist = {pych_data[index][0]} AND date = '{user_provided_date}';",
                 )
-                count = cur.fetchall()[0]
+                count = cur.fetchone()[0]
                 if count >= 5:
-                    print("This psychologist has more than 5 consultations that day. Please choose another date.")
+                    print(f"This psychologist has {count} consultations that day, which is more than 5. Please choose another date.")
                     continue
                 else:
-                    print("This date is available!")
+                    print(f"This psychologist has {count} consultations that day. This date is available!")
+                    self.date               = user_provided_date
+                    self.id_psychologist = pych_data[index][0]
                     break
 
-        self.date               = user_provided_date
-        self.id_psychologist = pych_data[index][0]
         return 1
     
     def data(self):
@@ -87,11 +87,12 @@ class Consultations:
         try:
             with self.CONN.cursor() as cur:
                 cur.execute(
-                    f"SELECT * FROM Psychologists WHERE not id = {self.id_psychologist};",
+                    f"SELECT * FROM Psychologists WHERE id = {self.id_psychologist};",
                 )
                 pych_data = cur.fetchone()
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
+            return []
         return pych_data
 
     def get_user(self):
@@ -131,6 +132,8 @@ class Consultations:
         Id: {user[0]}
         Name: {user[3]} {user[4]}
         Username: {user[5]}
+        -----------------
+        Date: {self.date.strftime("%d/%m/%Y")}
         """
 
 

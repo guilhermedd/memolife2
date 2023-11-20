@@ -151,10 +151,22 @@ class Users:
                     f"SELECT * FROM Posts WHERE id in (SELECT id_post FROM Publicated WHERE id_user = {self.id});",
                 )
                 posts = cur.fetchall()
+                cur.execute(
+                    f"""
+                    SELECT COUNT(*) 
+                    FROM (
+                        SELECT Posts.* 
+                        FROM Posts 
+                        JOIN Publicated ON Posts.id = Publicated.id_post 
+                        WHERE Publicated.id_user = {self.id}
+                    ) AS subquery;
+                    """
+                )
+                count = cur.fetchone()[0]
         except (Exception, psycopg2.DatabaseError) as error:
             print("error:",error)
             return None
-        return posts 
+        return posts, count
     
     def check_friends_posts(self):
         try:
@@ -198,7 +210,7 @@ class Users:
     def delete_post(self, all = False):
         # Have to delete: Read, Publicated, Post
         # Select which post to delete
-        posts = self.check_posts()
+        posts, _ = self.check_posts()
         if posts:
             if all:
                 for post in posts:
@@ -250,10 +262,9 @@ class Users:
                 for consultation in consultations:
                     Consultations(
                         id=consultation[0], 
-                        id_user=consultation[1],
-                        date=consultation[2], 
-                        time=consultation[3],
-                        id_psychologist=consultation[4], 
+                        date=consultation[1],
+                        id_user=consultation[2],
+                        id_psychologist=consultation[3],
                         conn=self.CONN).delete()
                 return 1
             else:
@@ -261,10 +272,9 @@ class Users:
                     print("Index: ", i, '\n',
                     Consultations(
                         id=consultation[0], 
-                        id_user=consultation[1],
-                        date=consultation[2], 
-                        time=consultation[3],
-                        id_psychologist=consultation[4], 
+                        date=consultation[1],
+                        id_user=consultation[2],
+                        id_psychologist=consultation[3],
                         conn=self.CONN).show()
                 )
                 
@@ -274,10 +284,9 @@ class Users:
                 
                 return Consultations(
                         id=consultations[index][0], 
-                        id_user=consultations[index][1],
-                        date=consultations[index][2], 
-                        time=consultations[index][3],
-                        id_psychologist=consultations[index][4], 
+                        date=consultations[index][1],
+                        id_user=consultations[index][2],
+                        id_psychologist=consultations[index][3],
                         conn=self.CONN).delete()
         else:
             print("You do not have consultations")
@@ -287,14 +296,29 @@ class Users:
         try:
             # To delete User, first have to delete: Post, Friends, Consultations
             # Delete Posts
-            self.delete_post(all=True)
+            while self.check_posts()[1] > 0:
+                self.delete_post(all=True)
 
             # Delete Consultations
             self.delete_consultation(all=True)
 
-            # Delete Friends
+            # Delete User from Friends (just in case there are references left)
             self.unfriend(all=True)
-        
+
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM Friends WHERE id_user = %s OR id_friend = %s;",
+                    (self.id, self.id)
+                )
+                self.CONN.commit()
+            
+            with self.CONN.cursor() as cur:
+                cur.execute(
+                    f"DELETE FROM Read WHERE id_user = {self.id};",
+                )
+                self.CONN.commit()
+
+            # Finally, delete the User
             with self.CONN.cursor() as cur:
                 cur.execute(
                     "DELETE FROM Users WHERE id = %s;",
@@ -302,7 +326,9 @@ class Users:
                 )
                 self.CONN.commit()
                 print("User deleted:\n", self.show())
+            
             return 1
         except (Exception, psycopg2.DatabaseError) as error:
-            print("error:",error)
+            print("error:", error)
             return 0
+
